@@ -1,34 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Persistent Counter</title>
+    <title>Tap Counter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        #counter { font-size: 48px; margin: 20px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background: #f0f8ff;
+            user-select: none;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        #counter {
+            font-size: 72px;
+            margin: 30px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px #2980b9;
+        }
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #2980b9;
+        }
+        #reset {
+            background: #e74c3c;
+            box-shadow: 0 4px #c0392b;
+        }
+        #reset:active {
+            box-shadow: 0 2px #c0392b;
+        }
     </style>
 </head>
 <body>
-    <h1>Simple Counter</h1>
+    <h1>Tap Counter</h1>
     <div id="counter">0</div>
-    <button onclick="increment()">+1</button>
-    <button onclick="reset()">Reset</button>
+    <button onclick="increment()">TAP ME!</button>
+    <button id="reset" onclick="reset()">Reset</button>
 
     <script>
-        // Load saved count (or 0 if none exists)
+        // Load saved count
         let count = localStorage.getItem('count') || 0;
-        document.getElementById('counter').textContent = count;
+        updateCounter();
 
         function increment() {
             count++;
-            document.getElementById('counter').textContent = count;
-            localStorage.setItem('count', count); // Save to storage
+            updateCounter();
+            localStorage.setItem('count', count);
+            // Fun animation
+            document.getElementById('counter').style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                document.getElementById('counter').style.transform = 'scale(1)';
+            }, 100);
         }
 
         function reset() {
-            count = 0;
+            if (confirm("Reset counter to 0?")) {
+                count = 0;
+                updateCounter();
+                localStorage.setItem('count', count);
+            }
+        }
+
+        function updateCounter() {
             document.getElementById('counter').textContent = count;
-            localStorage.setItem('count', count); // Reset storage
         }
     </script>
 </body>
