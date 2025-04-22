@@ -36,27 +36,193 @@
             transform: translateY(2px);
             box-shadow: 0 2px #2980b9;
         }
-        #reset {
+        #reset, #closeModal {
             background: #e74c3c;
             box-shadow: 0 4px #c0392b;
         }
-        #reset:active {
+        #reset:active, #closeModal:active {
             box-shadow: 0 2px #c0392b;
+        }
+        #games {
+            background: #2ecc71;
+            box-shadow: 0 4px #27ae60;
+        }
+        #games:active {
+            box-shadow: 0 2px #27ae60;
+        }
+
+        #gameModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .game-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .game-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .game-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .progress-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .progress-bar-container {
+            flex-grow: 1;
+            height: 20px;
+            background: #dcdcdc;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+        }
+        
+        .progress-text {
+            font-size: 12px;
+            font-weight: bold;
+            color: #2c3e50;
+            min-width: 60px;
+        }
+        
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-left: 10px;
+            box-shadow: 0 4px #a10000;
+        }
+        
+        .delete-btn:active {
+            background: #c0392b;
+            box-shadow: 0 4px #a10000;
         }
     </style>
 </head>
 <body>
-    <h1>Tap Counter</h1>
-    <div id="counter">0</div>
-    <button onclick="increment()">TAP ME!</button>
-    <button id="reset" onclick="reset()">Reset</button>
+    <h1>Valor guardado</h1>
+    <div id="counter">R$ 0</div>
+    <button onclick="increment()">+</button>
+    <button id="reset" onclick="reset()">-</button>
+    <button id="games" onclick="addGameTracker()">R$</button>
+    
+    <modal id="gameModal">
+        <h1>Informe o jogo e o valor:</h1>
+        <input type="text" id="gameName" placeholder="Nome do jogo" required>
+        <input type="number" id="gameValue" placeholder="Valor do jogo" required>
+        <button id="addGame" onclick="addGame()">Adicionar</button>
+        <button id="closeModal" onclick="document.getElementById('gameModal').style.display='none'">Cancelar</button>
+    </modal>
+
+    <div id="gameList" style="display: none; background: #ecf0f1; padding: 20px; border-radius: 10px; margin-top: 20px;"></div>
+    
 
     <script>
         // Load saved count
         let count = localStorage.getItem('count') || 0;
         updateCounter();
 
+        // Load saved games from localStorage and display them in the modal
+        function displayGames() {
+            const gameList = document.getElementById('gameList');
+            gameList.innerHTML = ''; // Clear previous content
+            const whishlist = JSON.parse(localStorage.getItem('whishlist')) || [];
+            
+            if (whishlist.length > 0) {
+                gameList.style.display = 'block';
+                whishlist.forEach((game, index) => {
+                    const gameItem = document.createElement('div');
+                    gameItem.className = 'game-item';
+                    
+                    const gameInfo = document.createElement('div');
+                    gameInfo.className = 'game-info';
+                    
+                    const gameName = document.createElement('div');
+                    gameName.className = 'game-name';
+                    gameName.textContent = game.name.toUpperCase();
+                    gameInfo.appendChild(gameName);
+                    
+                    const progressContainer = document.createElement('div');
+                    progressContainer.className = 'progress-container';
+                    
+                    const progressBarContainer = document.createElement('div');
+                    progressBarContainer.className = 'progress-bar-container';
+                    
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'progress-bar';
+                    const progress = Math.min((count / game.value) * 100, 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.style.background = progress >= 100 ? '#2ecc71' : '#e74c3c';
+                    
+                    const progressText = document.createElement('div');
+                    progressText.className = 'progress-text';
+                    progressText.textContent = `${progress.toFixed(2)}%`;
+                    
+                    progressBarContainer.appendChild(progressBar);
+                    progressContainer.appendChild(progressBarContainer);
+                    progressContainer.appendChild(progressText);
+                    gameInfo.appendChild(progressContainer);
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = 'X';
+                    deleteBtn.onclick = () => removeGame(index);
+                    
+                    gameItem.appendChild(gameInfo);
+                    gameItem.appendChild(deleteBtn);
+                    gameList.appendChild(gameItem);
+                });
+            } else {
+                gameList.style.display = 'none';
+            }
+        }
+
+        // Remove game from wishlist
+        function removeGame(index) {
+            if (confirm("Tem certeza que deseja remover este jogo da lista?")) {
+                const whishlist = JSON.parse(localStorage.getItem('whishlist')) || [];
+                if (index >= 0 && index < whishlist.length) {
+                    whishlist.splice(index, 1);
+                    localStorage.setItem('whishlist', JSON.stringify(whishlist));
+                    displayGames();
+                }
+            }
+        }
+
+        // Initial display
+        displayGames();
+
         function increment() {
+            count++;
             count++;
             updateCounter();
             localStorage.setItem('count', count);
@@ -65,6 +231,7 @@
             setTimeout(() => {
                 document.getElementById('counter').style.transform = 'scale(1)';
             }, 100);
+            displayGames();
         }
 
         function reset() {
@@ -72,11 +239,33 @@
                 count = 0;
                 updateCounter();
                 localStorage.setItem('count', count);
+                displayGames();
             }
         }
 
         function updateCounter() {
-            document.getElementById('counter').textContent = count;
+            document.getElementById('counter').textContent = "R$ " + count;
+        }
+
+        function addGameTracker() {
+            const modal = document.querySelector('modal');
+            modal.style.display = 'block';
+        }
+
+        function addGame(){
+            const gameName = document.getElementById('gameName').value;
+            const gameValue = parseFloat(document.getElementById('gameValue').value);
+            if (gameName && !isNaN(gameValue)) {
+                let whishlist = JSON.parse(localStorage.getItem('whishlist')) || [];
+                whishlist.push({ name: gameName, value: gameValue });
+                localStorage.setItem('whishlist', JSON.stringify(whishlist));
+                document.getElementById('gameName').value = '';
+                document.getElementById('gameValue').value = '';
+                document.getElementById('gameModal').style.display = 'none';
+                displayGames();
+            } else {
+                alert("Por favor, preencha todos os campos corretamente.");
+            }
         }
     </script>
 </body>
