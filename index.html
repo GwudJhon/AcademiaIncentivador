@@ -126,11 +126,34 @@
             background: #c0392b;
             box-shadow: 0 4px #a10000;
         }
+        #streakStar {
+    font-size: 24px;
+    color: #f39c12;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -20px;
+    animation: bob 1.5s ease-in-out infinite;
+}
+
+@keyframes bob {
+    0%, 100% {
+        transform: translateY(-5px);
+    }
+    50% {
+        transform: translateY(5px);
+    }
+}
+
     </style>
 </head>
 <body>
     <h1>Valor guardado</h1>
     <div id="counter">R$ 0</div>
+    <div id="streakStar">
+        ⭐ <span id="streakValue">+R$ 2.00</span>
+    </div>
+    
     <button onclick="increment()">+</button>
     <button id="reset" onclick="reset()">-</button>
     <button id="games" onclick="addGameTracker()">R$</button>
@@ -150,6 +173,13 @@
         // Load saved count
         let count = localStorage.getItem('count') || 0;
         updateCounter();
+        updateStreakDisplay();
+
+        function updateStreakDisplay() {
+            let sum = parseFloat(localStorage.getItem('sum')) || 2;
+            document.getElementById('streakValue').textContent = `+R$ ${sum.toFixed(2)}`;
+        }
+
 
         // Load saved games from localStorage and display them in the modal
         function displayGames() {
@@ -219,14 +249,33 @@
         }
 
         // Initial display
-        displayGames();
-
         function increment() {
-            count++;
-            count++;
+            // Get stored values
+            let lastDay = localStorage.getItem('lastDay');
+            let currentDate = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            let sum = parseFloat(localStorage.getItem('sum')) || 2; // Default to 2 if no streak
+
+            // Check if streak continues (current day is the next day after lastDay)
+            if (lastDay && isNextDay(lastDay, currentDate)) {
+                sum = parseFloat((sum * 1.05).toFixed(2)); // 5% increase
+                sum = Math.min(sum, 3); // Cap at R$ 3.00
+            } else if (lastDay === currentDate) {
+                // Do nothing (same day)
+            } else {
+                sum = 2; // Streak broken (reset to default)
+            }
+
+            // Update localStorage
+            localStorage.setItem('lastDay', currentDate);
+            localStorage.setItem('sum', sum.toFixed(2));
+            updateStreakDisplay();
+
+            // Update counter
+            count = parseFloat(count) + sum;
             updateCounter();
             localStorage.setItem('count', count);
-            // Fun animation
+
+            // Animation
             document.getElementById('counter').style.transform = 'scale(1.1)';
             setTimeout(() => {
                 document.getElementById('counter').style.transform = 'scale(1)';
@@ -234,9 +283,28 @@
             displayGames();
         }
 
+        // Helper function: Check if "nextDate" is the day after "prevDate"
+        function isNextDay(prevDate, nextDate) {
+            // Convert "dd/mm/yyyy" to Date object
+            const [prevDay, prevMonth, prevYear] = prevDate.split('/').map(Number);
+            const [nextDay, nextMonth, nextYear] = nextDate.split('/').map(Number);
+            
+            const prevDateObj = new Date(prevYear, prevMonth - 1, prevDay);
+            const nextDateObj = new Date(nextYear, nextMonth - 1, nextDay);
+            
+            // Calculate difference in days
+            const diffTime = nextDateObj - prevDateObj;
+            const diffDays = diffTime / (1000 * 60 * 60 * 24);
+            
+            return diffDays === 1; // True if nextDate is exactly 1 day after prevDate
+        }
+
         function reset() {
             if (confirm("Reset counter to 0?")) {
                 count = 0;
+                localStorage.setItem('sum', 2);
+                updateStreakDisplay();
+                localStorage.setItem('lastDay', null);
                 updateCounter();
                 localStorage.setItem('count', count);
                 displayGames();
@@ -244,7 +312,8 @@
         }
 
         function updateCounter() {
-            document.getElementById('counter').textContent = "R$ " + count;
+            const formattedCount = parseFloat(count).toFixed(2); // Forces 2 decimals
+            document.getElementById('counter').textContent = "R$ " + formattedCount;
         }
 
         function addGameTracker() {
